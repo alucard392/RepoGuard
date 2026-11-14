@@ -1,0 +1,4 @@
+# Ignore test fixtures and documentation examples that contain synthetic secrets
+tests/
+docs/superpowers/
+*.md

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="RepoGuard: local, offline repository hygiene scanning.">
+<title>RepoGuard — Local repository hygiene scanner</title>
+<style>
+:root{color-scheme:light;--ink:#182230;--muted:#586579;--paper:#f5f7fb;--card:#fff;--line:#dce3ed;--blue:#2458c6}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:72px 22px 62px;background:#111c31;color:#fff}.wrap{max-width:940px;margin:0 auto}
+.eyebrow{color:#a9c4ff;font-size:.82rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+h1{margin:.3em 0;font-size:clamp(2.5rem,7vw,4.6rem);line-height:1.05;letter-spacing:-.045em}
+header p{max-width:680px;color:#d4deef;font-size:1.15rem}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.actions a{padding:10px 16px;border-radius:9px;background:#fff;color:#15213a;font-weight:700;text-decoration:none}
+main{padding:36px 22px 70px}section{margin:22px 0;padding:26px;background:var(--card);border:1px solid var(--line);border-radius:15px}
+h2{margin-top:0;letter-spacing:-.02em}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.tile{padding:16px;border:1px solid var(--line);border-radius:11px}.tile h3{margin:.1em 0 .4em}
+pre{overflow:auto;padding:16px;border-radius:10px;background:#101a2b;color:#e6edf8}
+.note{color:var(--muted);font-size:.94rem}footer{padding:24px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div class="eyebrow">Offline · Read-only · Python 3.10+</div>
+<h1>RepoGuard</h1>
+<p>Catch likely leaked credentials, sensitive files, oversized files and missing repository basics before you commit or push.</p>
+<div class="actions"><a href="#start">Get started</a><a href="#security">Security boundaries</a><a href="#policies">Project policies</a></div>
+</div></header>
+<main class="wrap">
+<section><h2>Designed to stay local</h2>
+<p>RepoGuard scans your working tree or staged Git blobs on your machine. It does not upload source code, make network requests, send telemetry, or automatically modify files. Findings are redacted.</p>
+<div class="grid">
+<div class="tile"><h3>Secret patterns</h3><p>Recognizes GitHub, AWS, OpenAI, Google API, and Stripe secret token formats, Slack incoming webhooks, private-key headers and suspicious generic assignments.</p></div>
+<div class="tile"><h3>Repository hygiene</h3><p>Checks sensitive filenames, large files and basic project metadata.</p></div>
+<div class="tile"><h3>Two interfaces</h3><p>Use the command line for automation or the Tkinter desktop GUI for interactive review.</p></div>
+</div></section>
+<section id="start"><h2>Get started</h2>
+<p>Install from a source checkout, then launch the GUI or scan from a terminal.</p>
+<pre>python -m pip install .
+python -m repoguard gui
+python -m repoguard scan .
+python -m repoguard scan --staged .</pre>
+<p class="note">Staged scans require Git. They read the Git index, not later unstaged edits.</p>
+</section>
+<section id="security"><h2>Honest security boundaries</h2>
+<p>Secret detection is heuristic, not a guarantee. Obfuscated or split secrets can be missed, and generic rules can produce false positives. A clean scan is not a security certification. If a real credential may have leaked, revoke or rotate it immediately.</p></section>
+<section id="policies"><h2>Project policies</h2>
+<p>The repository includes a security policy, contribution guide, code of conduct, support guidance and MIT license. Private vulnerability reporting, branch protection, secret scanning and Dependabot must be enabled by maintainers in GitHub settings; documentation does not enable them automatically.</p></section>
+</main>
+<footer>RepoGuard · MIT License · Community contributions welcome</footer>
+</body></html>

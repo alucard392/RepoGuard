@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible problem in RepoGuard.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include real credentials, private keys, private source code or personal data. Use synthetic examples."
+  - type: input
+    id: version
+    attributes:
+      label: RepoGuard version
+      placeholder: "0.1.0 or commit hash"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.11.8"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11, Ubuntu 24.04, macOS ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Scan mode
+      options:
+        - Working tree
+        - Staged
+        - GUI launch
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest safe, reproducible example.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized output
+      description: Remove paths, usernames, tokens and confidential information.
+    validations:
+      required: false

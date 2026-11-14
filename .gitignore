@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+.tox/
+.nox/
+
+# Environments and local secrets
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
+!.env.dist
+
+# Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
