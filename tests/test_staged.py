@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from repoguard.staged import GitError, iter_staged, staged_paths
+from repoguard.staged import GitError, iter_staged, staged_entries, staged_paths
 from repoguard.scanner import scan_repository
-
-FAKE_TOKEN = "gh" + "p_" + "1234567890abcdef" + "1234567890abcdef" + "1234abcd"
 
 FAKE_TOKEN = "gh" + "p_" + "1234567890abcdef" + "1234567890abcdef" + "1234abcd"
 
@@ -27,6 +24,10 @@ class StagedTests(unittest.TestCase):
         run(["git", "init"], str(self.root))
         run(["git", "config", "user.email", "t@t"], str(self.root))
         run(["git", "config", "user.name", "t"], str(self.root))
+
+    def tearDown(self) -> None:
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
 
     def _commit(self, message: str = "c") -> None:
         run(["git", "commit", "--allow-empty", "-m", message], str(self.root))
@@ -74,7 +75,6 @@ class StagedTests(unittest.TestCase):
         staged = dict(iter_staged(str(self.root)))
         self.assertIn(".env", staged)
 
-
     def test_scanner_detects_secret_in_staged_blob_not_working_copy(self) -> None:
         (self.root / "config.py").write_text("token = " + FAKE_TOKEN + "\n")
         run(["git", "add", "config.py"], str(self.root))
@@ -101,6 +101,35 @@ class StagedTests(unittest.TestCase):
         run(["git", "add", "big.log"], str(self.root))
         staged = dict(iter_staged(str(self.root)))
         self.assertEqual(len(staged["big.log"]), 6 * 1024 * 1024)
+
+    def test_staged_rename(self) -> None:
+        """Test that staged file renames are properly detected."""
+        (self.root / "oldname.py").write_text("x = 1\n")
+        run(["git", "add", "oldname.py"], str(self.root))
+        run(["git", "commit", "-m", "add oldname"], str(self.root))
+        run(["git", "mv", "oldname.py", "newname.py"], str(self.root))
+        run(["git", "add", "newname.py"], str(self.root))
+        entries = list(staged_entries(str(self.root)))
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].path, "newname.py")
+        self.assertEqual(entries[0].status, "R")
+
+    def test_staged_copy(self) -> None:
+        """Test that staged file copies are properly detected."""
+        # Note: git cp is a Git 2.28+ feature that may not be available
+        # on all platforms (e.g., older Git on Windows). Skip if unavailable.
+        (self.root / "original.py").write_text("x = 1\n")
+        run(["git", "add", "original.py"], str(self.root))
+        run(["git", "commit", "-m", "add original"], str(self.root))
+        result = run(["git", "cp", "original.py", "copy.py"], str(self.root))
+        if result.returncode != 0:
+            self.skipTest("git cp not available on this platform")
+        run(["git", "add", "copy.py"], str(self.root))
+        entries = list(staged_entries(str(self.root)))
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].path, "copy.py")
+        # Status 'C' indicates a copy
+        self.assertEqual(entries[0].status, "C")
 
 
 if __name__ == "__main__":

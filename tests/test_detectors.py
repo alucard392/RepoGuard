@@ -286,6 +286,31 @@ class FindingRedactionTests(unittest.TestCase):
         finds = detect_secrets("config.py", content)
         self.assertFalse(any(f.rule_id == "high-entropy-secret" for f in finds))
 
+    def test_aws_secret_access_key_with_non_word_ending(self) -> None:
+        """AWS Secret Access Keys can end in /, +, or = and should still be detected."""
+        # Synthetic base64-like string that looks like an AWS secret key
+        # Use a key that ends in base64-friendly characters
+        key = "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY12345678" + "="  # 41 chars with padding
+        key = key[:40]  # Exactly 40 chars
+        content = f'AWS_SECRET = "{key}"'
+        finds = detect_secrets("config.py", content)
+        self.assertTrue(any(f.rule_id == "aws-secret-access-key" for f in finds),
+                       "Should detect AWS secret ending with =")
+
+    def test_generic_secret_quoted_json_key(self) -> None:
+        """Generic secrets with quoted keys in JSON format should be detected."""
+        content = '{"password": "this-is-a-long-secret-password-value"}'
+        finds = detect_secrets("config.json", content)
+        self.assertTrue(any(f.rule_id == "generic-secret" for f in finds),
+                       "Should detect quoted JSON key password")
+
+    def test_generic_secret_quoted_yaml_key(self) -> None:
+        """Generic secrets with quoted keys in YAML format should be detected."""
+        content = 'api_key: "this-is-a-long-api-key-value"'
+        finds = detect_secrets("config.yaml", content)
+        self.assertTrue(any(f.rule_id == "generic-secret" for f in finds),
+                       "Should detect quoted YAML key api_key")
+
 
 if __name__ == "__main__":
     unittest.main()

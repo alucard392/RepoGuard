@@ -67,7 +67,8 @@ class FileEntry:
 
 
 def _should_skip_dir(name: str) -> bool:
-    return name in SKIP_DIRS
+    """Match generated/dependency directory names case-insensitively."""
+    return name.casefold() in SKIP_DIRS
 
 
 def _warn(warnings: list[str] | None, message: str) -> None:

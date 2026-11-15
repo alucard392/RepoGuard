@@ -13,12 +13,15 @@ RepoGuard provides a desktop GUI (Tkinter) and a command-line interface. It is r
 - Redacts detected secret values in findings (never printed).
 - Supports a root-level .repoguardignore with glob patterns.
 - Native Tkinter GUI and CLI; no third-party runtime dependencies.
+- GUI supports sortable findings, severity/search filters, a configurable large-file threshold, keyboard shortcuts, and redacted JSON export.
 - Offline operation; no telemetry, analytics, or automatic remediation.
 - CLI: `--verbose`, `--quiet`, `--summary-only` modes for CI integration.
 
 ## Screenshots
 
-Capture screenshots from a real run and add them under docs/images/ before release. Do not use mock screenshots as evidence of working behavior.
+The desktop screenshot below was captured from a real GUI scan using synthetic, nonfunctional credential-like test values. The values are redacted in the interface.
+
+![RepoGuard desktop interface](docs/images/repoguard-gui.png)
 
 ## Requirements and installation
 
@@ -46,7 +49,9 @@ Optionally pass a repository path:
 
     repoguard gui ./my-project
 
-Choose a folder, select Scan Working Tree or Scan Staged, then select a finding to inspect its redacted evidence and suggested fix. The How to use button contains the full in-app guide.
+Choose a folder, select Scan Working Tree or Scan Staged, then select a finding to inspect its redacted evidence and suggested fix. Adjust the large-file threshold (0.1–1024 MB), click table headings to sort, and use Clear to reset filters. Export results as JSON from the detail toolbar. The How to use button contains the full in-app guide.
+
+Keyboard shortcuts: `Ctrl+O` browse for a folder, `Ctrl+R` scan the working tree, `Ctrl+F` focus search, `Ctrl+E` export JSON, `Esc` cancel a scan, and `F1` open the guide.
 
 ## Command-line usage
 

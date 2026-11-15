@@ -12,7 +12,6 @@ import queue
 import sys
 import threading
 import tkinter as tk
-import traceback
 from tkinter import filedialog, font as tkfont, messagebox, ttk
 from typing import Callable
 
@@ -75,9 +74,11 @@ class ScanController:
             self.queue.put(("cancelled", None))
         except (ScanError, GitError) as exc:
             self.queue.put(("error", str(exc)))
-        except Exception as exc:  # noqa: BLE001 - surfaced in the UI
-            self.queue.put(("error", f"{type(exc).__name__}: {exc}"))
-            self.queue.put(("traceback", traceback.format_exc()))
+        except Exception as exc:  # noqa: BLE001 - never echo scanned data in diagnostics
+            self.queue.put((
+                "error",
+                f"Unexpected {type(exc).__name__}. Diagnostic details were hidden to protect scanned content.",
+            ))
         else:
             self.queue.put(("result", result))
 
@@ -123,6 +124,10 @@ LOW_COLOR = "#047857"
 BORDER = "#e5e7eb"
 HOVER_BG = "#eef2f7"
 FOCUS_BORDER = "#2563eb"
+HEADER = "#111827"
+HEADER_FIELD = "#1f2937"
+HEADER_MUTED = "#cbd5e1"
+HEADER_BORDER = "#374151"
 
 FONT_FAMILY = "Segoe UI" if os.name == "nt" else "Helvetica"
 
@@ -136,6 +141,11 @@ USAGE_GUIDE = """GETTING STARTED
    visible findings out of the total scan findings.
 6. Use Copy path or Copy fix in the detail panel when you need to reference a result.
 7. Click Cancel to request a cooperative stop during a scan.
+
+KEYBOARD SHORTCUTS
+Ctrl+O: choose a folder | Ctrl+R: scan working tree | Ctrl+F: focus search
+Ctrl+E: export JSON | Escape: cancel scan | F1: open this guide
+Click a table heading to sort. Set the large-file threshold before scanning.
 
 WORKING TREE VS STAGED
 Working Tree scans the current files on disk. Staged scans Git's index blobs only.
@@ -192,10 +202,12 @@ class RepoGuardApp:
         self.result: ScanResult | None = None
         self.filtered: list[Finding] = []
         self.selected: Finding | None = None
+        self.sort_column = "severity"
+        self.sort_reverse = False
 
         self.root.title("RepoGuard")
-        self.root.geometry("1180x760")
-        self.root.minsize(900, 600)
+        self.root.geometry("1240x820")
+        self.root.minsize(1000, 650)
         self.root.configure(bg=BG)
 
         self._init_fonts()
@@ -203,6 +215,7 @@ class RepoGuardApp:
         self._build()
         self._closing = False
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._bind_shortcuts()
         self._poll()
 
     # -- setup ------------------------------------------------------------
@@ -218,8 +231,8 @@ class RepoGuardApp:
             family = tkfont.nametofont("TkDefaultFont").actual("family")
         self.f_body = tkfont.Font(family=family, size=10)
         self.f_bold = tkfont.Font(family=family, size=10, weight="bold")
-        self.f_heading = tkfont.Font(family=family, size=12, weight="bold")
-        self.f_card = tkfont.Font(family=family, size=20, weight="bold")
+        self.f_heading = tkfont.Font(family=family, size=13, weight="bold")
+        self.f_card = tkfont.Font(family=family, size=22, weight="bold")
         try:
             self.f_mono = tkfont.Font(
                 family="Consolas" if os.name == "nt" else "Menlo", size=10
@@ -235,8 +248,15 @@ class RepoGuardApp:
             pass
         style.configure(".", background=BG, foreground=TEXT, font=self.f_body)
         style.configure("TFrame", background=BG)
+        style.configure("Header.TFrame", background=HEADER)
         style.configure("TLabel", background=BG, foreground=TEXT)
-        style.configure("Title.TLabel", background=BG, foreground=TEXT, font=self.f_heading)
+        style.configure("Title.TLabel", background=BG, foreground=TEXT, font=tkfont.Font(family=FONT_FAMILY, size=16, weight="bold"))
+        style.configure("HeaderTitle.TLabel", background=HEADER, foreground="#f8fafc", font=tkfont.Font(family=FONT_FAMILY, size=17, weight="bold"))
+        style.configure("HeaderMuted.TLabel", background=HEADER, foreground=HEADER_MUTED)
+        style.configure("Header.TEntry", fieldbackground=HEADER_FIELD, foreground="#f8fafc", bordercolor=HEADER_BORDER, padding=(9, 7))
+        style.map("Header.TEntry", fieldbackground=[("readonly", HEADER_FIELD)], foreground=[("readonly", "#f8fafc")], bordercolor=[("focus", ACCENT)])
+        style.configure("Header.TButton", background="#334155", foreground="#f8fafc", padding=(12, 8), borderwidth=0)
+        style.map("Header.TButton", background=[("active", "#475569"), ("pressed", "#1e293b")], foreground=[("disabled", "#94a3b8")])
         style.configure("Muted.TLabel", background=BG, foreground=MUTED)
         style.configure("TButton", background=CARD, foreground=TEXT, padding=(12, 8), borderwidth=1)
         style.map("TButton",
@@ -317,28 +337,28 @@ class RepoGuardApp:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(4, weight=1)
 
-        header = ttk.Frame(self.root, padding=(16, 14, 16, 6))
+        header = ttk.Frame(self.root, style="Header.TFrame", padding=(20, 16, 20, 16))
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(1, weight=1)
-        ttk.Label(header, text="RepoGuard", style="Title.TLabel").grid(
+        ttk.Label(header, text="RepoGuard", style="HeaderTitle.TLabel").grid(
             row=0, column=0, sticky="w"
         )
         ttk.Label(
             header,
             text="Local, offline repository hygiene scanner",
-            style="Muted.TLabel",
+            style="HeaderMuted.TLabel",
         ).grid(row=1, column=0, sticky="w")
 
-        path_box = ttk.Frame(header)
+        path_box = ttk.Frame(header, style="Header.TFrame")
         path_box.grid(row=0, column=1, rowspan=2, sticky="ew", padx=(24, 0))
         path_box.columnconfigure(1, weight=1)
-        ttk.Label(path_box, text="Folder:").grid(row=0, column=0, sticky="w")
+        ttk.Label(path_box, text="FOLDER", style="HeaderMuted.TLabel").grid(row=0, column=0, sticky="w")
         self.path_var = tk.StringVar(value=os.getcwd())
         self.path_entry = ttk.Entry(
-            path_box, textvariable=self.path_var, state="readonly"
+            path_box, textvariable=self.path_var, state="readonly", style="Header.TEntry"
         )
         self.path_entry.grid(row=0, column=1, sticky="ew", padx=(8, 8))
-        ttk.Button(path_box, text="Browse…", command=self._browse).grid(row=0, column=2)
+        ttk.Button(path_box, text="Browse…", command=self._browse, style="Header.TButton").grid(row=0, column=2)
 
         toolbar = ttk.Frame(self.root, padding=(16, 0, 16, 10))
         toolbar.grid(row=1, column=0, sticky="ew")
@@ -394,16 +414,19 @@ class RepoGuardApp:
                 sticky="nsew",
                 padx=(0 if i == 0 else 12, 0),
             )
-            card.columnconfigure(0, weight=1)
+            card.columnconfigure(1, weight=1)
+            tk.Frame(card, bg=color, width=4).grid(
+                row=0, column=0, rowspan=2, sticky="ns"
+            )
             tk.Label(
                 card,
                 text=label.upper(),
                 bg=CARD,
                 fg=MUTED,
                 font=self.f_bold,
-            ).grid(row=0, column=0, sticky="w", padx=(16, 0), pady=(12, 4))
+            ).grid(row=0, column=1, sticky="w", padx=(14, 0), pady=(12, 4))
             value = tk.Label(card, text="0", bg=CARD, fg=color, font=self.f_card)
-            value.grid(row=1, column=0, sticky="w", padx=(16, 0), pady=(0, 12))
+            value.grid(row=1, column=1, sticky="w", padx=(14, 0), pady=(0, 12))
             self.card_labels[key] = value
 
         filters = ttk.Frame(self.root, padding=(16, 8, 16, 8))
@@ -426,12 +449,27 @@ class RepoGuardApp:
         ttk.Label(filters, text="Search:").grid(row=0, column=2, sticky="w", padx=(16, 8))
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", lambda *_: self._render_table())
-        search = ttk.Entry(filters, textvariable=self.search_var)
-        search.grid(row=0, column=3, sticky="ew", padx=(0, 8))
+        self.search_entry = ttk.Entry(filters, textvariable=self.search_var)
+        self.search_entry.grid(row=0, column=3, sticky="ew", padx=(0, 8))
+        ttk.Button(filters, text="Clear", command=self._clear_filters).grid(
+            row=0, column=4, padx=(0, 8)
+        )
         self.count_label = ttk.Label(
             filters, text="0 findings", style="Muted.TLabel"
         )
-        self.count_label.grid(row=0, column=4, sticky="e")
+        self.count_label.grid(row=0, column=5, sticky="e")
+        ttk.Label(filters, text="Large-file threshold:", style="Muted.TLabel").grid(
+            row=1, column=0, sticky="w", pady=(8, 0)
+        )
+        self.max_size_var = tk.DoubleVar(value=5.0)
+        self.max_size_spin = ttk.Spinbox(
+            filters, from_=0.1, to=1024.0, increment=0.5, width=8,
+            textvariable=self.max_size_var,
+        )
+        self.max_size_spin.grid(row=1, column=1, sticky="w", pady=(8, 0))
+        ttk.Label(filters, text="MB  ·  Ctrl+R to scan  ·  Ctrl+F to search", style="Muted.TLabel").grid(
+            row=1, column=2, columnspan=3, sticky="w", padx=(16, 0), pady=(8, 0)
+        )
 
         body = ttk.Panedwindow(self.root, orient="horizontal")
         body.grid(row=4, column=0, sticky="nsew", padx=16, pady=(0, 8))
@@ -446,12 +484,16 @@ class RepoGuardApp:
             show="headings",
             selectmode="browse",
         )
-        widths = {"severity": 90, "rule": 170, "path": 420, "line": 60}
+        widths = {"severity": 78, "rule": 140, "path": 280, "line": 50}
         for col in columns:
-            self.tree.heading(col, text=col.capitalize())
+            self.tree.heading(
+                col, text=col.capitalize(), command=lambda c=col: self._sort_by(c)
+            )
             self.tree.column(
                 col,
                 width=widths[col],
+                minwidth=55 if col == "line" else 90,
+                stretch=(col == "path"),
                 anchor="w" if col != "line" else "e",
             )
         self.tree.grid(row=0, column=0, sticky="nsew")
@@ -459,10 +501,14 @@ class RepoGuardApp:
             table_frame, orient="vertical", command=self.tree.yview
         )
         yscroll.grid(row=0, column=1, sticky="ns")
-        self.tree.configure(yscrollcommand=yscroll.set)
-        self.tree.tag_configure("high", foreground=HIGH_COLOR)
-        self.tree.tag_configure("medium", foreground=MEDIUM_COLOR)
-        self.tree.tag_configure("low", foreground=LOW_COLOR)
+        xscroll = ttk.Scrollbar(
+            table_frame, orient="horizontal", command=self.tree.xview
+        )
+        xscroll.grid(row=1, column=0, sticky="ew")
+        self.tree.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        self.tree.tag_configure("high", foreground=HIGH_COLOR, background="#fff7f7")
+        self.tree.tag_configure("medium", foreground=MEDIUM_COLOR, background="#fffbeb")
+        self.tree.tag_configure("low", foreground=LOW_COLOR, background="#f0fdf4")
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.tree.bind("<Double-1>", self._on_double_click)
         body.add(table_frame, weight=3)
@@ -499,6 +545,11 @@ class RepoGuardApp:
             highlightthickness=1,
         )
         self.detail_text.grid(row=1, column=0, sticky="nsew")
+        detail_scroll = ttk.Scrollbar(
+            detail_frame, orient="vertical", command=self.detail_text.yview
+        )
+        detail_scroll.grid(row=1, column=1, sticky="ns")
+        self.detail_text.configure(yscrollcommand=detail_scroll.set)
         # Configure text tags for rich formatting
         self.detail_text.tag_configure("hint", foreground=MUTED, font=self.f_body)
         self.detail_text.tag_configure("heading", font=self.f_bold, foreground=TEXT, spacing3=6)
@@ -533,6 +584,36 @@ class RepoGuardApp:
             "Open How to use for the full guide, CLI commands, ignore rules and safety notes."
         )
         self._update_staged_state()
+
+    def _bind_shortcuts(self) -> None:
+        """Expose common actions without requiring mouse navigation."""
+        self.root.bind("<Control-o>", lambda _event: self._browse())
+        self.root.bind("<Control-r>", lambda _event: self._scan_working_tree())
+        self.root.bind("<Control-f>", lambda _event: self.search_entry.focus_set())
+        self.root.bind("<Control-e>", lambda _event: self._export_json())
+        self.root.bind("<Escape>", lambda _event: self._cancel())
+        self.root.bind("<F1>", lambda _event: self._show_usage())
+
+    def _clear_filters(self) -> None:
+        self.severity_var.set("All")
+        self.search_var.set("")
+        self.tree.focus_set()
+
+    def _sort_by(self, column: str) -> None:
+        if column == self.sort_column:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = column
+            self.sort_reverse = False
+        for name in ("severity", "rule", "path", "line"):
+            arrow = " ↓" if name == self.sort_column and self.sort_reverse else (
+                " ↑" if name == self.sort_column else ""
+            )
+            self.tree.heading(
+                name, text=name.capitalize() + arrow,
+                command=lambda c=name: self._sort_by(c),
+            )
+        self._render_table()
 
     # -- help and onboarding ---------------------------------------------
 
@@ -634,7 +715,19 @@ class RepoGuardApp:
             "Scanning staged files…" if staged else "Scanning working tree…"
         )
         self.progress.start(12)
-        if not self.controller.start(path, staged=staged):
+        try:
+            max_size_mb = float(self.max_size_var.get())
+            if not 0.1 <= max_size_mb <= 1024.0:
+                raise ValueError
+        except (tk.TclError, TypeError, ValueError):
+            self._set_busy(False)
+            self.progress.stop()
+            messagebox.showerror(
+                "Invalid threshold", "Enter a large-file threshold between 0.1 and 1024 MB.",
+                parent=self.root,
+            )
+            return
+        if not self.controller.start(path, staged=staged, max_size_mb=max_size_mb):
             self._set_busy(False)
             self.progress.stop()
 
@@ -669,13 +762,26 @@ class RepoGuardApp:
         mode = "working tree" if result.mode == "working-tree" else "staged"
         suffix = f" — {len(result.warnings)} warning(s)" if result.warnings else ""
         self.status_var.set(
-            f"Scanned {result.root} ({mode}) in {result.duration_s:.2f}s{suffix}"
+            f"Scanned {result.root} ({mode}) in {result.duration_s:.2f}s · "
+            f"{result.counts['total']} finding(s){suffix}"
         )
         self._set_busy(False)
         self.progress.stop()
-        if not result.findings:
+        if result.warnings:
             self._set_detail_hint(
-                "No findings. This repository looks clean for the current checks."
+                "SCAN WARNINGS\n\nSome files could not be fully inspected. "
+                "Review these warnings before treating the scan as clean.\n\n"
+                + "\n".join(f"• {warning}" for warning in result.warnings)
+            )
+        elif not result.findings:
+            self._set_detail_hint(
+                "NO FINDINGS\n\nThis repository passed the checks that RepoGuard ran. "
+                "A clean heuristic scan is not a guarantee that no secrets or risks exist."
+            )
+        else:
+            self._set_detail_hint(
+                "SCAN COMPLETE\n\nSelect a finding in the table to inspect its "
+                "redacted evidence, impact and recommended remediation."
             )
 
     def _on_error(self, message: str) -> None:
@@ -705,7 +811,17 @@ class RepoGuardApp:
             return
         severity = self.severity_var.get().lower()
         needle = self.search_var.get().strip().lower()
-        for finding in self.result.findings:
+        rank = {"high": 0, "medium": 1, "low": 2}
+        sorters = {
+            "severity": lambda f: (rank.get(f.severity, 3), f.path.lower(), f.line or 0),
+            "rule": lambda f: f.rule_id.lower(),
+            "path": lambda f: (f.path.lower(), f.line or 0),
+            "line": lambda f: (f.line is None, f.line or 0),
+        }
+        findings = sorted(
+            self.result.findings, key=sorters[self.sort_column], reverse=self.sort_reverse
+        )
+        for finding in findings:
             if severity != "all" and finding.severity != severity:
                 continue
             haystack = " ".join(
@@ -740,6 +856,24 @@ class RepoGuardApp:
             if shown != total
             else f"{total} findings"
         )
+        if self.selected is not None:
+            try:
+                selected_index = self.filtered.index(self.selected)
+            except ValueError:
+                self.selected = None
+                self._set_detail_hint(
+                    "The selected finding is hidden by the current filters. "
+                    "Choose another finding or clear the filters."
+                )
+            else:
+                selected_iid = str(selected_index)
+                self.tree.selection_set(selected_iid)
+                self.tree.see(selected_iid)
+        elif total and not shown:
+            self._set_detail_hint(
+                "No findings match the current filters. "
+                "Clear the filters or change your search."
+            )
 
     def _on_select(self, _event: object = None) -> None:
         selection = self.tree.selection()

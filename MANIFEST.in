@@ -5,7 +5,7 @@ include SECURITY.md
 include CONTRIBUTING.md
 include CODE_OF_CONDUCT.md
 include SUPPORT.md
-recursive-include docs *.html
+recursive-include docs *.html *.png
 recursive-include tests *.py
 prune repoguard.egg-info
 prune build

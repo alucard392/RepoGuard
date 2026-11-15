@@ -21,6 +21,7 @@ class IgnoreMatcher:
         self.rooted_patterns: list[str] = []
         self.path_patterns: list[str] = []
         self.basename_patterns: list[str] = []
+        self.deep_path_patterns: list[str] = []  # For **/ prefix patterns
 
         for raw in patterns:
             pattern = raw.strip().replace("\\", "/")
@@ -34,10 +35,15 @@ class IgnoreMatcher:
             if pattern.startswith("/"):
                 self.rooted_patterns.append(pattern.lstrip("/"))
                 continue
+            double_star_glob = pattern.startswith("**/")
             if pattern.startswith("**/"):
                 pattern = pattern[3:]
             if "/" in pattern:
-                self.path_patterns.append(pattern)
+                if double_star_glob:
+                    # **/sub/pattern should match at any depth
+                    self.deep_path_patterns.append(pattern)
+                else:
+                    self.path_patterns.append(pattern)
             else:
                 self.basename_patterns.append(pattern)
 
@@ -58,6 +64,13 @@ class IgnoreMatcher:
                 return True
 
         for pattern in self.path_patterns:
+            if fnmatch.fnmatchcase(path, pattern):
+                return True
+
+        for pattern in self.deep_path_patterns:
+            # **/sub/pattern: check if path ends with /sub/pattern or matches exactly
+            if path == pattern or path.endswith("/" + pattern):
+                return True
             if fnmatch.fnmatchcase(path, pattern):
                 return True
 

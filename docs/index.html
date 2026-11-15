@@ -31,8 +31,8 @@ pre{overflow:auto;padding:16px;border-radius:10px;background:#101a2b;color:#e6ed
 <section><h2>Designed to stay local</h2>
 <p>RepoGuard scans your working tree or staged Git blobs on your machine. It does not upload source code, make network requests, send telemetry, or automatically modify files. Findings are redacted.</p>
 <div class="grid">
-<div class="tile"><h3>Secret patterns</h3><p>Recognizes GitHub, AWS, OpenAI, Google API, and Stripe secret token formats, Slack incoming webhooks, private-key headers and suspicious generic assignments.</p></div>
-<div class="tile"><h3>Repository hygiene</h3><p>Checks sensitive filenames, large files and basic project metadata.</p></div>
+<div class="tile"><h3>Secret patterns</h3><p>Recognizes GitHub, AWS, OpenAI, Google API, Stripe, Slack, Azure, GCP, DigitalOcean, Heroku secret token formats, PEM/OpenSSH/EC private keys, database connection strings, and suspicious generic/high-entropy assignments.</p></div>
+<div class="tile"><h3>Repository hygiene</h3><p>Checks sensitive filenames (Docker, Kubernetes, AWS, Terraform, backups), large files, missing .gitignore/README/license and basic project metadata.</p></div>
 <div class="tile"><h3>Two interfaces</h3><p>Use the command line for automation or the Tkinter desktop GUI for interactive review.</p></div>
 </div></section>
 <section id="start"><h2>Get started</h2>
@@ -40,7 +40,10 @@ pre{overflow:auto;padding:16px;border-radius:10px;background:#101a2b;color:#e6ed
 <pre>python -m pip install .
 python -m repoguard gui
 python -m repoguard scan .
-python -m repoguard scan --staged .</pre>
+python -m repoguard scan --staged .
+python -m repoguard scan --verbose .
+python -m repoguard scan --quiet --format json .
+python -m repoguard scan --summary-only --format json .</pre>
 <p class="note">Staged scans require Git. They read the Git index, not later unstaged edits.</p>
 </section>
 <section id="security"><h2>Honest security boundaries</h2>

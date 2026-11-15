@@ -44,8 +44,9 @@ AZURE_STORAGE_KEY = re.compile(
 )
 
 # AWS Secret Access Key (40 chars, base64-like)
+# Uses negative lookahead instead of \b to handle keys ending in /, +, =
 AWS_SECRET_ACCESS_KEY = re.compile(
-    r"(?<![A-Za-z0-9_])[A-Za-z0-9/+=]{40}\b"
+    r"(?<![A-Za-z0-9_])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])"
 )
 
 # GCP Service Account JSON - detect by structure
@@ -68,15 +69,18 @@ HEROKU_API_KEY = re.compile(
 # enough to be interesting and does not look like source code (parentheses,
 # brackets, angle brackets, quotes, whitespace, commas and semicolons are not
 # part of a value).
+# Supports both unquoted keys (password = value) and quoted keys (YAML/JSON: "password": value)
 GENERIC_SECRET = re.compile(
     r"""
     (?<![A-Za-z0-9_.-])
+    (?P<key_quote>["']?)
     (?P<key>
         password|passwd|pwd|secret|api[._]?key|apikey|
         access[._]?token|auth[._]?token|private[._]?key|
         client[._]?secret|secret[._]?key|signing[._]?key|
         encryption[._]?key|db[._]?password|database[._]?password
     )
+    (?P=key_quote)
     \s*[:=]\s*
     (?P<quote>["']?)
     (?P<value>[^\s"';,()\[\]{}<>]{12,})

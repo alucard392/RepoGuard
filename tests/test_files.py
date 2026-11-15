@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,7 @@ from repoguard.files import (
     SAFE_UPPER_BOUND,
     iter_files,
     file_checks,
+    _should_skip_dir,
 )
 
 
@@ -33,6 +35,9 @@ class IterFilesTests(unittest.TestCase):
         nm.mkdir()
         (nm / "lib.js").write_text("x\n")
 
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
     def test_skips_git_and_caches(self) -> None:
         rels = {rel for _, rel in iter_files(str(self.root))}
         self.assertIn("keep.py", rels)
@@ -40,6 +45,12 @@ class IterFilesTests(unittest.TestCase):
         self.assertNotIn(".git/secret.txt", rels)
         self.assertNotIn(".venv/pkg.py", rels)
         self.assertNotIn("node_modules/lib.js", rels)
+
+    def test_skip_directory_names_are_case_insensitive(self) -> None:
+        self.assertTrue(_should_skip_dir("NODE_MODULES"))
+        self.assertTrue(_should_skip_dir(".GIT"))
+        self.assertTrue(_should_skip_dir(".PyTest_Cache"))
+        self.assertFalse(_should_skip_dir("src"))
 
     def test_skips_binary_extensions(self) -> None:
         (self.root / "image.png").write_bytes(b"\x89PNG\r\n")

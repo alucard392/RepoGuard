@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,9 @@ class CLITests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.mkdtemp()
         self.root = Path(self.tmp)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_version(self) -> None:
         res = run_cli(["--version"])
@@ -89,12 +93,15 @@ class CLITests(unittest.TestCase):
     def test_readme_variants_no_missing_readme(self) -> None:
         for variant in ("README.md", "README.rst", "README.txt", "README"):
             root = Path(tempfile.mkdtemp())
-            (root / variant).write_text("# hi\n")
-            (root / "LICENSE").write_text("MIT\n")
-            (root / ".gitignore").write_text("*.pyc\n")
-            res = run_cli(["scan", str(root)])
-            self.assertEqual(res.returncode, 0, msg=variant)
-            self.assertNotIn("missing-readme", res.stdout)
+            try:
+                (root / variant).write_text("# hi\n")
+                (root / "LICENSE").write_text("MIT\n")
+                (root / ".gitignore").write_text("*.pyc\n")
+                res = run_cli(["scan", str(root)])
+                self.assertEqual(res.returncode, 0, msg=variant)
+                self.assertNotIn("missing-readme", res.stdout)
+            finally:
+                shutil.rmtree(root, ignore_errors=True)
 
     def test_no_readme_still_flagged(self) -> None:
         res = run_cli(["scan", str(self.root)])
@@ -139,6 +146,21 @@ class CLITests(unittest.TestCase):
     def test_missing_git_staged_exit_two(self) -> None:
         res = run_cli(["scan", "--staged", str(self.root)])
         self.assertEqual(res.returncode, 2)
+
+    def test_license_variants_recognized(self) -> None:
+        """Verify scanner recognizes all LICENSE variants."""
+        license_variants = ("LICENSE", "LICENSE.md", "LICENSE.txt",
+                          "LICENCE", "LICENCE.md", "copying", "copying.md",
+                          "copyright")
+        for variant in license_variants:
+            root = Path(tempfile.mkdtemp())
+            try:
+                (root / variant).write_text("MIT\n")
+                (root / "README.md").write_text("# hi\n")
+                res = run_cli(["scan", str(root)])
+                self.assertNotIn("missing-license", res.stdout, msg=variant)
+            finally:
+                shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":

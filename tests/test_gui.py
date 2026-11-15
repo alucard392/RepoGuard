@@ -4,7 +4,9 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import threading
 import unittest
+from unittest.mock import patch
 
 from repoguard.detectors import Finding
 from repoguard.gui import ScanController, USAGE_GUIDE, export_result_json
@@ -25,6 +27,18 @@ class ScanControllerTests(unittest.TestCase):
             "error:synthetic error",
             "trace:synthetic traceback",
         ])
+
+    def test_unexpected_error_does_not_echo_scanned_content(self) -> None:
+        controller = ScanController()
+        with patch(
+            "repoguard.gui.scan_repository",
+            side_effect=RuntimeError("SECRET_SENTINEL_do_not_display"),
+        ):
+            controller._run("/synthetic", False, 5.0, threading.Event())
+        kind, message = controller.queue.get_nowait()
+        self.assertEqual(kind, "error")
+        self.assertNotIn("SECRET_SENTINEL", str(message))
+        self.assertIn("hidden", str(message))
 
     def test_usage_guide_covers_core_workflows(self) -> None:
         for phrase in (

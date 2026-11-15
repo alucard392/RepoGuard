@@ -8,7 +8,7 @@ import sys
 from . import __version__
 from .config import DEFAULT_FAIL_ON, DEFAULT_MAX_SIZE_MB, SEVERITY_ORDER
 from .output import format_error_json, format_result, format_result_json
-from .scanner import ScanError, scan_repository
+from .scanner import ScanCancelled, ScanError, scan_repository
 
 PROG = "repoguard"
 VERSION = __version__
@@ -101,6 +101,13 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"{PROG}: {message}", file=sys.stderr)
         return 2
+    except ScanCancelled:
+        # Scan was cancelled (e.g., via GUI cancel button)
+        if args.format == "json":
+            print(format_error_json("scan cancelled", args.path))
+        else:
+            print(f"{PROG}: scan cancelled", file=sys.stderr)
+        return 130
     except KeyboardInterrupt:
         print(f"{PROG}: interrupted", file=sys.stderr)
         return 130
@@ -114,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         if not args.quiet:
             for warning in result.warnings:
-                print(f"{PROG}: warning: {warning}", file=sys.stderr)
+                if args.verbose:
+                    print(f"{PROG}: warning: {warning}", file=sys.stderr)
             if args.summary_only:
                 print(format_result(result, summary_only=True))
             else:

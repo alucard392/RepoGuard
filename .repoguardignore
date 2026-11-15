@@ -1,4 +1,15 @@
-# Ignore test fixtures and documentation examples that contain synthetic secrets
+# Ignore test fixtures, internal development docs, and planning documents
+# that contain synthetic test secrets used as detection examples.
+
+# Test fixtures with synthetic secrets
 tests/
+
+# Internal development plans with test examples (not user-facing)
 docs/superpowers/
-*.md
+
+# Development documentation with pattern descriptions (synthetic fixtures)
+# Note: Must match actual filename case on disk
+FIXES.md
+ARCHITECTURE.md
+AUDIT.md
+TEST_REPORT.md
