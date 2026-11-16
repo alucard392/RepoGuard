@@ -33,3 +33,7 @@ dist/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Local development notes
+.superpowers/
+docs/superpowers/
