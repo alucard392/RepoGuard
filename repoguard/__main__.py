@@ -120,13 +120,22 @@ def main(argv: list[str] | None = None) -> int:
             print(format_result_json(result))
     else:
         if not args.quiet:
+            # Always show warnings in text output (not just with --verbose)
             for warning in result.warnings:
-                if args.verbose:
-                    print(f"{PROG}: warning: {warning}", file=sys.stderr)
+                print(f"{PROG}: warning: {warning}", file=sys.stderr)
             if args.summary_only:
                 print(format_result(result, summary_only=True))
             else:
                 print(format_result(result))
+
+    # Exit with code 2 for incomplete scans (security-relevant content could not be inspected)
+    if result.incomplete:
+        if not args.quiet:
+            print(
+                f"{PROG}: scan incomplete - some files could not be inspected",
+                file=sys.stderr,
+            )
+        return 2
 
     threshold = SEVERITY_ORDER[args.fail_on]
     relevant = [

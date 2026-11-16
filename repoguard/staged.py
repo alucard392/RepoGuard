@@ -152,6 +152,15 @@ def staged_blob_bytes(cwd: str, path: str) -> bytes:
     return result.stdout
 
 
+def staged_ignore_patterns(cwd: str) -> list[str]:
+    """Return .repoguardignore patterns from the Git index (staged version)."""
+    try:
+        return run_git(["cat-file", "blob", ":.repoguardignore"], cwd).splitlines()
+    except GitError:
+        # No staged .repoguardignore
+        return []
+
+
 def iter_staged(cwd: str) -> Iterator[tuple[str, str]]:
     """Yield ``(path, content)`` for each readable staged blob.
 

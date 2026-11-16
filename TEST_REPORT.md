@@ -1,26 +1,30 @@
 # RepoGuard Test Report
 
+> Latest verification update - 2026-11-16: The current suite ran 105 tests: 105 passed, 0 skipped, 0 failed; 35 subtests passed. This supersedes the earlier 94-test snapshot below. New regression coverage is in tests/test_release_regressions.py. Final wheel/sdist rebuild and clean virtual-environment installation passed. Installed CLI binary/oversized-text checks passed; automated Tk window/guide construction passed. Manual visual GUI review and GitHub CI remain unverified.
+
+
 ## Test Suite Summary
 
 | Metric | Value |
 |--------|-------|
-| **Total Tests** | 94 |
+| **Total Tests** | 105 |
 | **Subtests** | 35 |
-| **Passed** | 94 |
+| **Passed** | 105 |
 | **Failed** | 0 |
-| **Skipped** | 1 |
-| **Duration** | ~14.8 seconds |
+| **Skipped** | 0 |
+| **Duration** | approximately 21 seconds (latest unittest run) |
 
 ## Test Coverage by Module
 
 | Module | Tests | Subtests | Coverage |
 |--------|-------|----------|----------|
 | `detectors.py` | 41 | 0 | High - all detection patterns |
-| `files.py` | 11 | 0 | High - file traversal, sensitive names |
-| `ignore.py` | 6 | 0 | High - ignore pattern matching |
-| `staged.py` | 9 | 0 | High - Git staged blob scanning |
-| `cli.py` | 18 | 0 | High - CLI integration |
+| `files.py` | 12 | 0 | High - file traversal, sensitive names |
+| `ignore.py` | 5 | 0 | High - ignore pattern matching |
+| `staged.py` | 12 | 0 | High - Git staged blob scanning |
+| `cli.py` | 20 | 0 | High - CLI integration |
 | `gui.py` | 4 | 35 | Medium - controller, onboarding |
+| `test_release_regressions.py` | 11 | 0 | High - release-blocking regression coverage |
 
 ## Test Growth During Mission
 
@@ -33,7 +37,7 @@
 | Task 4: High-entropy fallback | 4 | 81 |
 | Task 5: Sensitive filenames | 5 | 86 |
 | **Prior fixes re-added** | **3** | **89** |
-| **New regression tests** | **5** | **94** |
+| **New regression tests** | **11** | **105** |
 
 ## Verification Commands and Results
 
@@ -41,7 +45,7 @@
 ```bash
 python -m unittest discover -s tests -v
 ```
-**Result**: 94 passed, 35 subtests passed, 1 skipped (git cp not available on Windows)
+**Latest result (2026-11-16)**: 105 passed, 35 subtests passed, 0 skipped, 0 failures (105 tests run).
 
 ### 2. Compile Check
 ```bash
@@ -135,7 +139,7 @@ python -m repoguard scan . --format json
   "warnings": []
 }
 ```
-**Result**: 0 findings - clean self-scan (verified 2026-11-15)
+Historical result: 0 findings on 2026-11-15. Latest self-scan on 2026-11-16 reports two high-severity findings in untracked local synthetic fixtures: test_secret.py and test_scan/secret.py. They are preserved, not included in the release package, and must not be staged or uploaded. Do not use git add -A.
 
 ### `.repoguardignore` Contents (Current)
 ```

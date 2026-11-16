@@ -14,8 +14,12 @@ from .detectors import Finding
 # Directories skipped entirely while walking. These are dependency, cache and
 # build directories; a directory literally named ".env" is treated the same way
 # (common with virtual environments).
-SKIP_DIRS = frozenset({
+# Note: .git is always skipped. Other directories are skipped only if they
+# appear to be generated (not tracked by Git).
+SKIP_DIRS_ALWAYS = frozenset({
     ".git",
+})
+SKIP_DIRS_GENERATED = frozenset({
     "venv", ".venv", "env", ".env", "virtualenv", ".virtualenv",
     "__pycache__", ".cache", ".pytest_cache", ".mypy_cache", ".ruff_cache",
     "node_modules",
@@ -66,9 +70,15 @@ class FileEntry:
     size: int
 
 
-def _should_skip_dir(name: str) -> bool:
-    """Match generated/dependency directory names case-insensitively."""
-    return name.casefold() in SKIP_DIRS
+def _should_skip_dir(rel_path: str, git_tracked_dirs: set[str] | None = None) -> bool:
+    """Skip generated directories unless that exact path contains tracked files."""
+    normalized = rel_path.replace("\\", "/").strip("/").casefold()
+    name = normalized.rsplit("/", 1)[-1]
+    if name in SKIP_DIRS_ALWAYS:
+        return True
+    if name in SKIP_DIRS_GENERATED:
+        return not (git_tracked_dirs is not None and normalized in git_tracked_dirs)
+    return False
 
 
 def _warn(warnings: list[str] | None, message: str) -> None:
@@ -76,8 +86,31 @@ def _warn(warnings: list[str] | None, message: str) -> None:
         warnings.append(message)
 
 
+def _get_git_tracked_dirs(root: str) -> set[str]:
+    """Return every repository-relative directory containing tracked files."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False
+        )
+        if result.returncode != 0:
+            return set()
+        directories: set[str] = set()
+        for raw_path in result.stdout.split(b"\0"):
+            if not raw_path:
+                continue
+            rel_path = os.fsdecode(raw_path).replace("\\", "/")
+            parts = rel_path.split("/")[:-1]
+            for index in range(1, len(parts) + 1):
+                directories.add("/".join(parts[:index]).casefold())
+        return directories
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return set()
+
+
 def walk_files(
-    root: str, warnings: list[str] | None = None
+    root: str, warnings: list[str] | None = None,
+    check_git_tracked: bool = True
 ) -> Iterator[FileEntry]:
     """Yield regular files under *root* in deterministic order.
 
@@ -91,6 +124,8 @@ def walk_files(
     if not root_path.is_dir():
         return
 
+    git_tracked_dirs = _get_git_tracked_dirs(root) if check_git_tracked else set()
+
     def onerror(exc: OSError) -> None:
         _warn(
             warnings,
@@ -103,9 +138,13 @@ def walk_files(
     ):
         kept: list[str] = []
         for name in sorted(dirnames):
-            if _should_skip_dir(name):
-                continue
             entry_path = Path(dirpath) / name
+            try:
+                candidate_rel = entry_path.relative_to(root_path).as_posix()
+            except ValueError:
+                continue
+            if _should_skip_dir(candidate_rel, git_tracked_dirs):
+                continue
             try:
                 if entry_path.is_symlink():
                     _warn(warnings, f"skipping symbolic link {entry_path}")
@@ -243,4 +282,10 @@ def _is_sensitive_name(name: str, rel_lower: str) -> bool:
     # Full path matches for files in sensitive directories
     if rel_lower in SENSITIVE_FILENAMES:
         return True
+    # Check for nested sensitive paths (e.g., project/.aws/credentials)
+    # Check if any sensitive path is a suffix of the relative path
+    for sensitive in SENSITIVE_FILENAMES:
+        if "/" in sensitive:
+            if rel_lower == sensitive or rel_lower.endswith("/" + sensitive):
+                return True
     return False

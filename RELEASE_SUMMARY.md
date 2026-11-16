@@ -1,4 +1,7 @@
-# RepoGuard v0.1.0 — Release Engineering Mission Complete
+# RepoGuard Release Summary
+
+> Status update - 2026-11-16: NOT READY TO PUBLISH. Any earlier release-ready statement in this document is superseded. Independent stress testing exposed additional scan-completeness, tracked-directory traversal, cloud-key false-positive, and JSON path-privacy defects. Fixes and regression tests have been added to the working tree. Final packaging and clean install now pass. Manual GUI visual verification and GitHub CI remain outstanding. The current self-scan flags two untracked local synthetic fixtures that must be excluded from any upload.
+
 
 **Date:** 2026-11-15  
 **Status:** ✅ **RELEASE READY — ALL VERIFICATION PASSED**
@@ -7,7 +10,7 @@
 
 ## Executive Summary
 
-RepoGuard v0.1.0 is technically complete and ready for publication. All security issues have been addressed, all tests pass, packaging verified, clean installation verified, and documentation updated.
+This was the prior assessment from 2026-11-15. It is not the current release decision; see the 2026-11-16 status notice at the top.
 
 ---
 

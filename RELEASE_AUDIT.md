@@ -1,5 +1,8 @@
 # RepoGuard v0.1.0 Release Audit Report
 
+> Current status update - 2026-11-16: NOT READY TO PUBLISH. The 2026-11-15 audit below is a historical snapshot and its RELEASE READY verdict is superseded. Independent retesting found and the current working tree now contains fixes for: binary assets incorrectly marking scans incomplete; tracked files hidden in nested generated-name directories; AWS 40-character false positives; GCP service-account metadata false positives; and absolute scan-root disclosure in JSON diagnostics. The latest test suite is 105 run / 105 passed / 0 skipped / 0 failed. Final wheel/sdist rebuild, fresh installation, CLI binary/oversized-text checks, and automated Tk window/guide smoke passed. Manual visual GUI verification and GitHub CI remain unverified. The latest self-scan also flags two untracked local synthetic test fixtures; they must be excluded from upload.
+
+
 **Audit Date:** Sun Nov 15 2026  
 **Working Directory:** C:\Users\Autre\Documents\RepoGuard  
 **Platform:** Windows (win32)  
@@ -7,15 +10,15 @@
 
 ---
 
-## 1. Executive Verdict
+## 1. Historical Executive Verdict (superseded by the 2026-11-16 re-audit)
 
 **RELEASE READY — ALL VERIFICATION PASSED**
 
-RepoGuard v0.1.0 is technically complete and ready for publication. All security issues have been addressed, all tests pass, packaging verified, clean installation verified, and documentation updated.
+This was the 2026-11-15 assessment, before independent adversarial tests found additional release-blocking defects. It is retained as history, not as the current release decision.
 
-### Release Blockers (0)
+### Historical Release Blockers (0; superseded)
 
-No blockers remain. All critical issues have been addressed.
+This historical statement is superseded; see the current blockers in the status notice above.
 
 ### Verification Summary (2026-11-15)
 
@@ -86,7 +89,7 @@ No blockers remain. All critical issues have been addressed.
 ## 4. Test Results
 
 ```
-Ran 94 tests in 14.793s
+Ran 94 tests in 16.456s
 
 OK (skipped=1)
 ```

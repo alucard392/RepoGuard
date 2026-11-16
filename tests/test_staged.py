@@ -115,21 +115,24 @@ class StagedTests(unittest.TestCase):
         self.assertEqual(entries[0].status, "R")
 
     def test_staged_copy(self) -> None:
-        """Test that staged file copies are properly detected."""
-        # Note: git cp is a Git 2.28+ feature that may not be available
-        # on all platforms (e.g., older Git on Windows). Skip if unavailable.
-        (self.root / "original.py").write_text("x = 1\n")
+        """A copied working-tree file is represented as a staged addition."""
+        original = self.root / "original.py"
+        original.write_text("x = 1\n")
         run(["git", "add", "original.py"], str(self.root))
         run(["git", "commit", "-m", "add original"], str(self.root))
-        result = run(["git", "cp", "original.py", "copy.py"], str(self.root))
-        if result.returncode != 0:
-            self.skipTest("git cp not available on this platform")
+
+        # Git does not provide a git cp command. A copied file is normally
+        # represented as an addition unless copy detection is explicitly requested.
+        copied = self.root / "copy.py"
+        copied.write_bytes(original.read_bytes())
         run(["git", "add", "copy.py"], str(self.root))
+
         entries = list(staged_entries(str(self.root)))
-        self.assertEqual(len(entries), 1)
-        self.assertEqual(entries[0].path, "copy.py")
-        # Status 'C' indicates a copy
-        self.assertEqual(entries[0].status, "C")
+        self.assertTrue(any(
+            entry.path == "copy.py" and entry.status in ("A", "C")
+            for entry in entries
+        ))
+
 
 
 if __name__ == "__main__":

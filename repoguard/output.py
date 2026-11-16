@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 
 from .detectors import Finding
@@ -99,13 +100,45 @@ def format_json(findings: list[Finding], root: str, summary_only: bool = False) 
     return json.dumps(data, indent=2, sort_keys=True)
 
 
+def _safe_root_label(root: str) -> str:
+    """Return a non-identifying label for a scan root."""
+    try:
+        absolute = os.path.abspath(os.path.expanduser(root))
+    except (OSError, TypeError, ValueError):
+        absolute = root
+    return os.path.basename(os.path.normpath(absolute)) or "."
+
+
+def _sanitize_local_path_text(value: str, root: str) -> str:
+    """Replace absolute scan-root references in diagnostics with a safe label."""
+    try:
+        absolute = os.path.abspath(os.path.expanduser(root))
+    except (OSError, TypeError, ValueError):
+        absolute = root
+    result = value
+    for candidate in sorted((item for item in {root, absolute} if item), key=len, reverse=True):
+        normalized = os.path.normpath(candidate)
+        if normalized:
+            result = re.sub(
+                re.escape(normalized), lambda _match: "<repo>", result,
+                flags=re.IGNORECASE if os.name == "nt" else 0,
+            )
+    return result
+
+
 def format_result_json(result: ScanResult, summary_only: bool = False) -> str:
     """Serialize a full ScanResult, including mode, warnings and duration."""
 
     data = json.loads(format_json(result.findings, result.root, summary_only=summary_only))
     data["mode"] = result.mode
     data["duration_seconds"] = round(result.duration_s, 6)
-    data["warnings"] = list(result.warnings)
+    data["warnings"] = [
+        _sanitize_local_path_text(warning, result.root)
+        for warning in result.warnings
+    ]
+    data["incomplete"] = result.incomplete
+    if result.skipped_files:
+        data["skipped_files"] = result.skipped_files
     return json.dumps(data, indent=2, sort_keys=True)
 
 
@@ -113,7 +146,11 @@ def format_error_json(message: str, root: str) -> str:
     """Return a valid JSON document describing a scan error (exit 2)."""
 
     return json.dumps(
-        {"tool": "repoguard", "root": root, "error": message},
+        {
+            "tool": "repoguard",
+            "root": _safe_root_label(root),
+            "error": _sanitize_local_path_text(message, root),
+        },
         indent=2,
         sort_keys=True,
     )

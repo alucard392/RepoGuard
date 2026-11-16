@@ -13,3 +13,26 @@ FIXES.md
 ARCHITECTURE.md
 AUDIT.md
 TEST_REPORT.md
+
+# Build artifacts
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+.coverage
+
+# Binary assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+
+# Virtual environments
+test_env/
+venv/
+.venv/
+env/
+.env/

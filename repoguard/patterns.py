@@ -59,31 +59,82 @@ DIGITALOCEAN_TOKEN = re.compile(
     r"(?<![A-Za-z0-9_])dop_v1_[A-Za-z0-9]{64}\b"
 )
 
-# Heroku API Key (UUID v4 format)
+# Heroku API Key (UUID v4 format) - match UUIDs, filter by context in detector
 HEROKU_API_KEY = re.compile(
     r"(?<![A-Za-z0-9_])[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b"
 )
 
 # --- Generic secret assignments ---------------------------------------------
 # Requires a recognized key, an assignment operator, and a value that is long
-# enough to be interesting and does not look like source code (parentheses,
-# brackets, angle brackets, quotes, whitespace, commas and semicolons are not
-# part of a value).
-# Supports both unquoted keys (password = value) and quoted keys (YAML/JSON: "password": value)
+# enough to be interesting and does not look like source code.
+# Supports:
+#   - Unquoted keys: password = value
+#   - Quoted keys in JSON: "password": "value"
+#   - Quoted keys in YAML: api_key: "value"
+#   - YAML multiline block scalars: password: |\\n  value
+#   - Environment exports: export API_TOKEN=value
+# Values may contain spaces when quoted.
 GENERIC_SECRET = re.compile(
     r"""
     (?<![A-Za-z0-9_.-])
     (?P<key_quote>["']?)
     (?P<key>
-        password|passwd|pwd|secret|api[._]?key|apikey|
-        access[._]?token|auth[._]?token|private[._]?key|
-        client[._]?secret|secret[._]?key|signing[._]?key|
-        encryption[._]?key|db[._]?password|database[._]?password
+        password|passwd|pwd|secret|token|api[._]?key|apikey|
+        access[._]?token|auth[._]?token|refresh[._]?token|
+        client[._]?secret|private[._]?key|secret[._]?key|
+        signing[._]?key|encryption[._]?key|db[._]?password|
+        database[._]?password
     )
     (?P=key_quote)
     \s*[:=]\s*
+    (?:
+        # Quoted value (single or double quotes) - can contain spaces
+        (?P<quote>["'])
+        (?P<value>[^"']{12,})
+        (?P=quote)
+      |
+        # Unquoted value - no spaces, no code-like chars
+        (?P<unquoted_value>[^\s"';,()\[\]{}<>]{12,})
+    )
+    """,
+    re.VERBOSE | re.IGNORECASE,
+)
+
+# Generic secret for YAML multiline block scalars (key: |\\n  value)
+GENERIC_SECRET_YAML_BLOCK = re.compile(
+    r"""
+    (?<![A-Za-z0-9_.-])
+    (?P<key_quote>["']?)
+    (?P<key>
+        password|passwd|pwd|secret|token|api[._]?key|apikey|
+        access[._]?token|auth[._]?token|refresh[._]?token|
+        client[._]?secret|private[._]?key|secret[._]?key|
+        signing[._]?key|encryption[._]?key|db[._]?password|
+        database[._]?password
+    )
+    (?P=key_quote)
+    \s*:\s*\|\s*\n
+    (?P<value>
+        (?:\s{2,}[^\n]+\n?)+
+    )
+    """,
+    re.VERBOSE | re.IGNORECASE,
+)
+
+# Generic secret for export statements: export TOKEN=value
+GENERIC_SECRET_EXPORT = re.compile(
+    r"""
+    \bexport\s+
+    (?P<key>
+        PASSWORD|PASSWD|PWD|SECRET|TOKEN|API[._]?KEY|APIKEY|
+        ACCESS[._]?TOKEN|AUTH[._]?TOKEN|REFRESH[._]?TOKEN|
+        CLIENT[._]?SECRET|PRIVATE[._]?KEY|SECRET[._]?KEY|
+        SIGNING[._]?KEY|ENCRYPTION[._]?KEY|DB[._]?PASSWORD|
+        DATABASE[._]?PASSWORD
+    )
+    \s*=\s*
     (?P<quote>["']?)
-    (?P<value>[^\s"';,()\[\]{}<>]{12,})
+    (?P<value>[^"'\s]{12,})
     (?P=quote)
     """,
     re.VERBOSE | re.IGNORECASE,
@@ -141,6 +192,8 @@ __all__ = [
     "HEROKU_API_KEY",
     # Generic
     "GENERIC_SECRET",
+    "GENERIC_SECRET_YAML_BLOCK",
+    "GENERIC_SECRET_EXPORT",
     "PLACEHOLDER_WORDS",
     "PLACEHOLDER_SUBSTRINGS",
     "ANGLE_BRACKET",
