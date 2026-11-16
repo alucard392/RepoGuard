@@ -4,12 +4,11 @@
 
 - **Repository:** https://github.com/alucard392/RepoGuard
 - **Default branch:** `main`
-- **Main branch head at this audit update:** `cec2289f7fc60f125d232e24ab9e6dea16143780`
 - **Last verified application/test commit:** `9d78db9f80457c242cdd6a8ed2dc9d6dbf7c2065`
 
 ## Executive status
 
-The public source repository is published. The application/test commit passed the recorded local verification and the full GitHub Actions matrix. Commits after that application/test commit through the branch head listed above were documentation-only.
+The public source repository is published. The application/test commit passed the recorded local verification and the full GitHub Actions matrix. Subsequent changes to the release documentation are documentation-only and do not alter application code or tests.
 
 This audit does **not** claim that a formal tagged release or package publication has happened. Manual visual GUI testing and several GitHub repository security settings remain outstanding.
 
