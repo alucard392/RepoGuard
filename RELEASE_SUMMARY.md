@@ -4,7 +4,8 @@
 
 - Repository: https://github.com/alucard392/RepoGuard
 - Default branch: `main`
-- Latest verified commit: `9d78db9f80457c242cdd6a8ed2dc9d6dbf7c2065`
+- Latest application/test commit: `9d78db9f80457c242cdd6a8ed2dc9d6dbf7c2065`
+- Latest documentation commit: `7e47ccd77085c5d3913866f961990ea57e0d5171`
 - Package version: `0.1.0`
 - License: MIT
 
