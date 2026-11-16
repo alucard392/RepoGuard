@@ -1,10 +1,10 @@
 # RepoGuard v0.1.0 Release Audit Report
 
-> Current status update - 2026-11-16: NOT READY TO PUBLISH. The 2026-11-15 audit below is a historical snapshot and its RELEASE READY verdict is superseded. Independent retesting found and the current working tree now contains fixes for: binary assets incorrectly marking scans incomplete; tracked files hidden in nested generated-name directories; AWS 40-character false positives; GCP service-account metadata false positives; and absolute scan-root disclosure in JSON diagnostics. The latest test suite is 105 run / 105 passed / 0 skipped / 0 failed. Final wheel/sdist rebuild, fresh installation, CLI binary/oversized-text checks, and automated Tk window/guide smoke passed. Manual visual GUI verification and GitHub CI remain unverified. The latest self-scan also flags two untracked local synthetic test fixtures; they must be excluded from upload.
+> Current status — 2026-11-16: PUBLIC REPOSITORY PUBLISHED at https://github.com/alucard392/RepoGuard (branch `main`, commit `9d78db9`). The final local suite passes 106/106 tests with 0 skips; compilation, package build, fresh wheel installation, CLI smoke tests, and a clean self-scan (0 findings, 0 warnings, complete) passed. GitHub Actions is green across all 12 OS/Python test combinations (Ubuntu, Windows, macOS × Python 3.10–3.13) plus the source/wheel build job (13/13 jobs). Cross-platform staged-path normalization was fixed in the latest commit. Manual visual GUI testing has not been completed. No GitHub Release/tag or PyPI publication has been made. The sections below are the historical 2026-11-15 audit and are retained for context; their test counts, paths, repository status, and release instructions are not current.
 
 
 **Audit Date:** Sun Nov 15 2026  
-**Working Directory:** C:\Users\Autre\Documents\RepoGuard  
+**Working Directory:** Local project checkout (path intentionally omitted)
 **Platform:** Windows (win32)  
 **Git Status:** On branch `master`, 1 commit, 15 modified files, 3 untracked files  
 

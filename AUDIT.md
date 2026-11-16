@@ -2,7 +2,7 @@
 
 ## Initial State (Before Mission)
 
-RepoGuard was rebuilt from a Default Project template into a conventional layout at `C:\Users\Autre\Documents\RepoGuard`. The initial implementation had:
+RepoGuard was rebuilt from a Default Project template into a conventional project layout. The initial implementation had:
 
 - **65 passing tests** (baseline)
 - **Core modules**: config.py, detectors.py, files.py, ignore.py, output.py, staged.py, scanner.py, gui.py, __main__.py
