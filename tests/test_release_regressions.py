@@ -8,7 +8,21 @@ from pathlib import Path
 
 from repoguard.detectors import detect_secrets
 from repoguard.output import format_error_json, format_result_json
-from repoguard.scanner import ScanResult, scan_repository
+from repoguard.scanner import ScanResult, _relative_prefix, scan_repository
+
+
+class StagedPathRegressionTests(unittest.TestCase):
+    def test_relative_prefix_resolves_symlinked_repository_paths(self):
+        with tempfile.TemporaryDirectory() as temp:
+            repository = Path(temp) / "repository"
+            repository.mkdir()
+            alias = Path(temp) / "repository-alias"
+            try:
+                alias.symlink_to(repository, target_is_directory=True)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"directory symlinks are unavailable: {exc}")
+
+            self.assertEqual(_relative_prefix(str(alias), str(repository)), "")
 
 
 class DetectorRegressionTests(unittest.TestCase):

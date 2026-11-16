@@ -224,7 +224,16 @@ def _scan_working_tree(
 
 
 def _relative_prefix(root: str, top: str) -> str:
-    relative = os.path.relpath(root, top)
+    # Git may report a different but equivalent spelling for the same path:
+    # Windows can return 8.3 short names, while macOS may report /var instead
+    # of its /private/var target. Resolve both paths before comparing them.
+    root_path = os.path.normcase(os.path.realpath(os.path.abspath(root)))
+    top_path = os.path.normcase(os.path.realpath(os.path.abspath(top)))
+    try:
+        relative = os.path.relpath(root_path, top_path)
+    except ValueError as exc:
+        # On Windows, relpath raises when paths are on different drives.
+        raise ScanError(f"scan root is outside the Git repository: {root}") from exc
     if relative == os.pardir or relative.startswith(os.pardir + os.sep):
         raise ScanError(f"scan root is outside the Git repository: {root}")
     return "" if relative == "." else Path(relative).as_posix()
