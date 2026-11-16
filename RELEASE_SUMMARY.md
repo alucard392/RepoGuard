@@ -23,8 +23,7 @@
 | Git diff checks | Passed |
 | Git working tree after publication | Clean |
 
-The CI run is available at:
-https://github.com/alucard392/RepoGuard/actions/runs/43872776793
+Open the repository's Actions tab to inspect the cross-platform CI workflow and individual runs.
 
 ## What is published
 
