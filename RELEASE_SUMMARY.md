@@ -1,14 +1,17 @@
 # RepoGuard — Publication and Verification Summary
 
-**Status:** Public source repository published; automated release gates pass.
+**Repository status:** Public source repository published. The application/test baseline passed the documented local and CI checks; a tagged package release has not been made.
 
 - Repository: https://github.com/alucard392/RepoGuard
 - Default branch: `main`
-- Latest application/test commit: `9d78db9f80457c242cdd6a8ed2dc9d6dbf7c2065`
+- Main branch head at this documentation update: `cec2289f7fc60f125d232e24ab9e6dea16143780` (documentation-only)
+- Last verified application/test commit: `9d78db9f80457c242cdd6a8ed2dc9d6dbf7c2065`
 - Package version: `0.1.0`
 - License: MIT
 
-## Current verification
+## Verification evidence
+
+The following results apply to application/test commit `9d78db9`. The later commits through `cec2289` updated documentation only; they did not change application code or tests.
 
 | Check | Result |
 |---|---|
@@ -20,19 +23,18 @@
 | Binary-only / oversized-text CLI behavior | Passed |
 | Repository self-scan | 0 findings, 0 warnings; scan complete |
 | Git diff checks | Passed |
-| Git working tree after publication | Clean |
 
-Open the repository's Actions tab to inspect the cross-platform CI workflow and individual runs.
+The full green CI run was recorded for the application/test commit above. Do not interpret this as a fresh CI run for every later documentation-only commit. The repository's Actions tab contains the workflow history.
 
-## What is published
+## Published contents
 
-The repository includes the application source, CLI and Tkinter GUI, regression tests, README, MIT license, security and contribution policies, project documentation, screenshot, issue and pull-request templates, Dependabot configuration, and cross-platform CI workflow.
+The public repository contains the application source, CLI and Tkinter GUI, regression tests, README, MIT license, security and contribution policies, project documentation, screenshot, issue and pull-request templates, Dependabot configuration, and cross-platform CI workflow.
 
 Local synthetic fixtures, caches, build outputs, virtual environments, and internal planning notes are excluded from the public branch.
 
-## Remaining limitations / follow-up
+## Outstanding work and limitations
 
-- Manual visual GUI testing has not been completed. Automated Tk window/guide smoke testing and GUI unit tests passed.
+- Manual visual and interaction testing of the GUI has not been completed. Automated Tk window/guide smoke testing and GUI unit tests passed.
 - No GitHub Release or pushed version tag exists yet.
 - The package has not been published to PyPI.
 - Branch protection, private vulnerability reporting, GitHub secret scanning/push protection, and GitHub Pages have not been configured or verified.
@@ -40,7 +42,7 @@ Local synthetic fixtures, caches, build outputs, virtual environments, and inter
 
 ## Release decision
 
-**The source repository is published and the automated quality gates are green.** It is suitable for public source-code review and use with the limitations documented in README.md. Treat a tagged binary/package release as a separate step after manual GUI review and GitHub security settings are considered.
+The source repository is published and the application/test baseline passed its recorded automated quality gates. It is suitable for public source-code review and use with the limitations documented in README.md. Treat a tagged binary/package release as a separate step after manual GUI review and consideration of the GitHub security settings.
 
 ## Reproduce the checks
 
